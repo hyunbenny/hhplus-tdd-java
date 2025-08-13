@@ -19,6 +19,11 @@ public class UserPointService {
     }
 
     public UserPoint chargePoint(long id, long chargePointAmount) {
-        return userPointTable.selectById(id);
+        UserPoint userPoint = userPointTable.selectById(id);
+        if(userPoint == null) throw new UserNotExistException();
+
+        long chargedPoint = userPoint.point() + chargePointAmount;
+
+        return userPointTable.insertOrUpdate(id, chargedPoint);
     }
 }
