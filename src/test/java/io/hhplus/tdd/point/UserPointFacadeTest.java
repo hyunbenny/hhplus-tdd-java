@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -34,7 +35,7 @@ class UserPointFacadeTest {
     class chargePoint {
         @Test
         @DisplayName("포인트 충전 > 정상 동작")
-        void givenUser_whenChargePoint_thenPointIncreased() {
+        void givenUser_whenChargePoint_thenPointIncreased() throws TimeoutException {
             UserPointService realUserPointService = new UserPointService(userPointTable);
             PointHistoryService realPointHistoryService = new PointHistoryService(pointHistoryTable);
 
@@ -86,7 +87,7 @@ class UserPointFacadeTest {
     class usePoint {
         @Test
         @DisplayName("포인트 사용 > 정상 동작")
-        void givenUser_whenUsePoint_thenPointDecreased() {
+        void givenUser_whenUsePoint_thenPointDecreased() throws TimeoutException {
             UserPointService realUserPointService = new UserPointService(userPointTable);
             PointHistoryService realPointHistoryService = new PointHistoryService(pointHistoryTable);
 
