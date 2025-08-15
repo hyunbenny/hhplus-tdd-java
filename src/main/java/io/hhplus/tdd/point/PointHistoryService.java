@@ -2,12 +2,10 @@ package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.exception.CustomException;
-import io.hhplus.tdd.exception.InvalidTransactionTypeException;
+import io.hhplus.tdd.exception.ErrorCodes;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.security.InvalidParameterException;
 import java.util.List;
 
 @Service
@@ -22,7 +20,7 @@ public class PointHistoryService {
 
 
     public PointHistory savePointHistory(long userId, long point, TransactionType type) {
-        if(type == null) throw new InvalidTransactionTypeException();
+        if(type == null) throw new CustomException(ErrorCodes.INVALID_TRANSACTION_TYPE);
         return pointHistoryTable.insert(userId, point, type, System.currentTimeMillis());
     }
 }

@@ -1,9 +1,9 @@
 package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.database.UserPointTable;
-import io.hhplus.tdd.exception.PointAmountInvalidException;
-import io.hhplus.tdd.exception.PointBalanceInsufficientException;
-import io.hhplus.tdd.exception.UserNotExistException;
+import io.hhplus.tdd.exception.CustomException;
+import io.hhplus.tdd.exception.ErrorCodes;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,16 +15,16 @@ public class UserPointService {
 
     public UserPoint getPoint(long id) {
         UserPoint userPoint = userPointTable.selectById(id);
-        if(userPoint == null) throw new UserNotExistException();
+        if(userPoint == null) throw new CustomException(ErrorCodes.USER_NOT_EXIST);
 
         return userPoint;
     }
 
     public UserPoint chargePoint(long id, long chargePointAmount) {
-        if(chargePointAmount <= 0) throw new PointAmountInvalidException();
+        if(chargePointAmount <= 0) throw new CustomException(ErrorCodes.POINT_AMOUNT_INVALID);
 
         UserPoint userPoint = userPointTable.selectById(id);
-        if(userPoint == null) throw new UserNotExistException();
+        if(userPoint == null) throw new CustomException(ErrorCodes.USER_NOT_EXIST);
 
         long chargedPoint = userPoint.point() + chargePointAmount;
 
@@ -32,13 +32,13 @@ public class UserPointService {
     }
 
     public UserPoint usePoint(long id, long usePointAmount) {
-        if(usePointAmount <= 0) throw new PointAmountInvalidException();
+        if(usePointAmount <= 0) throw new CustomException(ErrorCodes.POINT_AMOUNT_INVALID);
 
         UserPoint userPoint = userPointTable.selectById(id);
-        if(userPoint == null) throw new UserNotExistException();
+        if(userPoint == null) throw new CustomException(ErrorCodes.USER_NOT_EXIST);
 
         long balancePoint = userPoint.point() - usePointAmount;
-        if(balancePoint < 0) throw new PointBalanceInsufficientException();
+        if(balancePoint < 0) throw new CustomException(ErrorCodes.POINT_BALANCE_INSUFFICIENT);
 
         return userPointTable.insertOrUpdate(id, balancePoint);
     }

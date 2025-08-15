@@ -2,9 +2,8 @@ package io.hhplus.tdd.point;
 
 
 import io.hhplus.tdd.database.UserPointTable;
-import io.hhplus.tdd.exception.PointAmountInvalidException;
-import io.hhplus.tdd.exception.PointBalanceInsufficientException;
-import io.hhplus.tdd.exception.UserNotExistException;
+import io.hhplus.tdd.exception.CustomException;
+import io.hhplus.tdd.exception.ErrorCodes;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,7 +13,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -48,7 +46,7 @@ public class UserPointServiceTest {
 
         when(userPointTable.selectById(id)).thenReturn(null);
 
-        assertThrows(UserNotExistException.class, () -> sut.getPoint(id));
+        assertThrows(CustomException.class, () -> sut.getPoint(id));
     }
 
     @DisplayName("아이디와 충천할 포인트양을 전달받아 포인트를 충전한다.")
@@ -78,7 +76,8 @@ public class UserPointServiceTest {
 
         when(userPointTable.selectById(id)).thenReturn(null);
 
-        assertThrows(UserNotExistException.class, () -> sut.chargePoint(id, chargePointAmount));
+        CustomException exception = assertThrows(CustomException.class, () -> sut.chargePoint(id, chargePointAmount));
+        assertEquals(ErrorCodes.USER_NOT_EXIST.getCode(), exception.getErrorCode());
     }
 
 
@@ -106,7 +105,8 @@ void givenIdAndPointAmount_whenUserPointNotExist_thenThrowError() {
     long usePoint = 500L;
     when(userPointTable.selectById(id)).thenReturn(null);
 
-    assertThrows(UserNotExistException.class, () -> sut.usePoint(id, usePoint));
+    CustomException exception = assertThrows(CustomException.class, () -> sut.usePoint(id, usePoint));
+    assertEquals(ErrorCodes.USER_NOT_EXIST.getCode(), exception.getErrorCode());
 }
 
 @DisplayName("아이디와 사용한 포인트양을 전달받아 포인트를 차감할 때, 잔액이 부족하면 에러를 리턴한다.")
@@ -118,7 +118,9 @@ void givenUserIdAndPointAmount_whenBalanceInsufficient_thenThrowError() {
     UserPoint currentUserPoint = getUserPointFixture(id, currentPoint);
     when(userPointTable.selectById(id)).thenReturn(currentUserPoint);
 
-    assertThrows(PointBalanceInsufficientException.class, () -> sut.usePoint(id, usePoint));
+
+    CustomException exception = assertThrows(CustomException.class, () -> sut.usePoint(id, usePoint));
+    assertEquals(ErrorCodes.POINT_BALANCE_INSUFFICIENT.getCode(), exception.getErrorCode());
 }
 
 @DisplayName("포인트 사용 시, 사용하는 포인트가 0인 경우 예외를 반환한다.")
@@ -127,7 +129,8 @@ void givenIdAndUsePointAmount_whenUsePointAmountIsZero_thenThrowError() {
     long id = 1L;
     long usePoint = 0;
 
-    assertThrows(PointAmountInvalidException.class, () -> sut.usePoint(id, usePoint));
+    CustomException exception = assertThrows(CustomException.class, () -> sut.usePoint(id, usePoint));
+    assertEquals(ErrorCodes.POINT_AMOUNT_INVALID.getCode(), exception.getErrorCode());
 }
 
 @DisplayName("포인트 사용 시, 사용하는 포인트가 0보다 작은 경우 예외를 반환한다.")
@@ -136,7 +139,8 @@ void givenIdAndUsePointAmount_whenUsePointAmountIsLessThenZero_thenThrowError() 
     long id = 1L;
     long usePoint = -5;
 
-    assertThrows(PointAmountInvalidException.class, () -> sut.usePoint(id, usePoint));
+    CustomException exception = assertThrows(CustomException.class, () -> sut.usePoint(id, usePoint));
+    assertEquals(ErrorCodes.POINT_AMOUNT_INVALID.getCode(), exception.getErrorCode());
 }
 
 @DisplayName("포인트 충전 시, 충전하는 포인트가 0인 경우 예외를 반환한다.")
@@ -145,7 +149,8 @@ void givenIdAndChargePointAmount_whenChargePointAmountIsZero_thenThrowError() {
     long id = 1L;
     long chargePoint = 0L;
 
-    assertThrows(PointAmountInvalidException.class, () -> sut.chargePoint(id, chargePoint));
+    CustomException exception = assertThrows(CustomException.class, () -> sut.chargePoint(id, chargePoint));
+    assertEquals(ErrorCodes.POINT_AMOUNT_INVALID.getCode(), exception.getErrorCode());
 }
 
 @DisplayName("포인트 충전 시, 충전하는 포인트가 0보다 작은 경우 예외를 반환한다.")
@@ -154,7 +159,8 @@ void givenIdAndChargePointAmount_whenChargePointAmountIsLessThenZero_thenThrowEr
     long id = 1L;
     long chargePoint = -5L;
 
-    assertThrows(PointAmountInvalidException.class, () -> sut.chargePoint(id, chargePoint));
+    CustomException exception = assertThrows(CustomException.class, () -> sut.chargePoint(id, chargePoint));
+    assertEquals(ErrorCodes.POINT_AMOUNT_INVALID.getCode(), exception.getErrorCode());
 }
 
 private UserPoint getUserPointFixture(long id, long point) {
