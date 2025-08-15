@@ -1,6 +1,7 @@
 package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.database.UserPointTable;
+import io.hhplus.tdd.exception.PointAmountInvalidException;
 import io.hhplus.tdd.exception.PointBalanceInsufficientException;
 import io.hhplus.tdd.exception.UserNotExistException;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,8 @@ public class UserPointService {
     }
 
     public UserPoint usePoint(long id, long usePointAmount) {
+        if(usePointAmount <= 0) throw new PointAmountInvalidException();
+
         UserPoint userPoint = userPointTable.selectById(id);
         if(userPoint == null) throw new UserNotExistException();
 
