@@ -98,72 +98,87 @@ public class UserPointServiceTest {
         assertEquals(currentPoint - usedPoint, result.point());
     }
 
-@DisplayName("아이디와 사용한 포인트양을 전달받아 포인트를 차감할 때, UserPoint 정보가 없는 경우 에러를 리턴한다.")
-@Test
-void givenIdAndPointAmount_whenUserPointNotExist_thenThrowError() {
-    long id = 1L;
-    long usePoint = 500L;
-    when(userPointTable.selectById(id)).thenReturn(null);
+    @DisplayName("아이디와 사용한 포인트양을 전달받아 포인트를 차감할 때, UserPoint 정보가 없는 경우 에러를 리턴한다.")
+    @Test
+    void givenIdAndPointAmount_whenUserPointNotExist_thenThrowError() {
+        long id = 1L;
+        long usePoint = 500L;
+        when(userPointTable.selectById(id)).thenReturn(null);
 
-    CustomException exception = assertThrows(CustomException.class, () -> sut.usePoint(id, usePoint));
-    assertEquals(ErrorCodes.USER_NOT_EXIST.getCode(), exception.getErrorCode());
-}
+        CustomException exception = assertThrows(CustomException.class, () -> sut.usePoint(id, usePoint));
+        assertEquals(ErrorCodes.USER_NOT_EXIST.getCode(), exception.getErrorCode());
+    }
 
-@DisplayName("아이디와 사용한 포인트양을 전달받아 포인트를 차감할 때, 잔액이 부족하면 에러를 리턴한다.")
-@Test
-void givenUserIdAndPointAmount_whenBalanceInsufficient_thenThrowError() {
-    long id = 1L;
-    long currentPoint = 200L;
-    long usePoint = 500L;
-    UserPoint currentUserPoint = getUserPointFixture(id, currentPoint);
-    when(userPointTable.selectById(id)).thenReturn(currentUserPoint);
+    @DisplayName("아이디와 사용한 포인트양을 전달받아 포인트를 차감할 때, 잔액이 부족하면 에러를 리턴한다.")
+    @Test
+    void givenUserIdAndPointAmount_whenBalanceInsufficient_thenThrowError() {
+        long id = 1L;
+        long currentPoint = 200L;
+        long usePoint = 500L;
+        UserPoint currentUserPoint = getUserPointFixture(id, currentPoint);
+        when(userPointTable.selectById(id)).thenReturn(currentUserPoint);
 
 
-    CustomException exception = assertThrows(CustomException.class, () -> sut.usePoint(id, usePoint));
-    assertEquals(ErrorCodes.POINT_BALANCE_INSUFFICIENT.getCode(), exception.getErrorCode());
-}
+        CustomException exception = assertThrows(CustomException.class, () -> sut.usePoint(id, usePoint));
+        assertEquals(ErrorCodes.POINT_BALANCE_INSUFFICIENT.getCode(), exception.getErrorCode());
+    }
 
-@DisplayName("포인트 사용 시, 사용하는 포인트가 0인 경우 예외를 반환한다.")
-@Test
-void givenIdAndUsePointAmount_whenUsePointAmountIsZero_thenThrowError() {
-    long id = 1L;
-    long usePoint = 0;
+    @DisplayName("포인트 사용 시, 사용하는 포인트가 0인 경우 예외를 반환한다.")
+    @Test
+    void givenIdAndUsePointAmount_whenUsePointAmountIsZero_thenThrowError() {
+        long id = 1L;
+        long usePoint = 0;
 
-    CustomException exception = assertThrows(CustomException.class, () -> sut.usePoint(id, usePoint));
-    assertEquals(ErrorCodes.POINT_AMOUNT_INVALID.getCode(), exception.getErrorCode());
-}
+        CustomException exception = assertThrows(CustomException.class, () -> sut.usePoint(id, usePoint));
+        assertEquals(ErrorCodes.POINT_AMOUNT_INVALID.getCode(), exception.getErrorCode());
+    }
 
-@DisplayName("포인트 사용 시, 사용하는 포인트가 0보다 작은 경우 예외를 반환한다.")
-@Test
-void givenIdAndUsePointAmount_whenUsePointAmountIsLessThenZero_thenThrowError() {
-    long id = 1L;
-    long usePoint = -5;
+    @DisplayName("포인트 사용 시, 사용하는 포인트가 0보다 작은 경우 예외를 반환한다.")
+    @Test
+    void givenIdAndUsePointAmount_whenUsePointAmountIsLessThenZero_thenThrowError() {
+        long id = 1L;
+        long usePoint = -5;
 
-    CustomException exception = assertThrows(CustomException.class, () -> sut.usePoint(id, usePoint));
-    assertEquals(ErrorCodes.POINT_AMOUNT_INVALID.getCode(), exception.getErrorCode());
-}
+        CustomException exception = assertThrows(CustomException.class, () -> sut.usePoint(id, usePoint));
+        assertEquals(ErrorCodes.POINT_AMOUNT_INVALID.getCode(), exception.getErrorCode());
+    }
 
-@DisplayName("포인트 충전 시, 충전하는 포인트가 0인 경우 예외를 반환한다.")
-@Test
-void givenIdAndChargePointAmount_whenChargePointAmountIsZero_thenThrowError() {
-    long id = 1L;
-    long chargePoint = 0L;
+    @DisplayName("포인트 충전 시, 충전하는 포인트가 0인 경우 예외를 반환한다.")
+    @Test
+    void givenIdAndChargePointAmount_whenChargePointAmountIsZero_thenThrowError() {
+        long id = 1L;
+        long chargePoint = 0L;
 
-    CustomException exception = assertThrows(CustomException.class, () -> sut.chargePoint(id, chargePoint));
-    assertEquals(ErrorCodes.POINT_AMOUNT_INVALID.getCode(), exception.getErrorCode());
-}
+        CustomException exception = assertThrows(CustomException.class, () -> sut.chargePoint(id, chargePoint));
+        assertEquals(ErrorCodes.POINT_AMOUNT_INVALID.getCode(), exception.getErrorCode());
+    }
 
-@DisplayName("포인트 충전 시, 충전하는 포인트가 0보다 작은 경우 예외를 반환한다.")
-@Test
-void givenIdAndChargePointAmount_whenChargePointAmountIsLessThenZero_thenThrowError() {
-    long id = 1L;
-    long chargePoint = -5L;
+    @DisplayName("포인트 충전 시, 충전하는 포인트가 0보다 작은 경우 예외를 반환한다.")
+    @Test
+    void givenIdAndChargePointAmount_whenChargePointAmountIsLessThenZero_thenThrowError() {
+        long id = 1L;
+        long chargePoint = -5L;
 
-    CustomException exception = assertThrows(CustomException.class, () -> sut.chargePoint(id, chargePoint));
-    assertEquals(ErrorCodes.POINT_AMOUNT_INVALID.getCode(), exception.getErrorCode());
-}
+        CustomException exception = assertThrows(CustomException.class, () -> sut.chargePoint(id, chargePoint));
+        assertEquals(ErrorCodes.POINT_AMOUNT_INVALID.getCode(), exception.getErrorCode());
+    }
 
-private UserPoint getUserPointFixture(long id, long point) {
+    @DisplayName("전달받은 UserPoint로 데이터를 업데이트(롤백)한다.")
+    @Test
+    void givenUserPoint_whenRollback_thenInsertOrUpdateAndReturnUserPoint() {
+        long id = 1L;
+        long originPoint = 100L;
+        UserPoint beforeUserPoint = getUserPointFixture(id, originPoint);
+
+        when(userPointTable.insertOrUpdate(id, originPoint)).thenReturn(beforeUserPoint);
+
+        UserPoint result = sut.rollback(id, originPoint);
+
+        assertEquals(id, result.id());
+        assertEquals(originPoint, result.point());
+    }
+
+    private UserPoint getUserPointFixture(long id, long point) {
         return new UserPoint(id, point, System.currentTimeMillis());
     }
 

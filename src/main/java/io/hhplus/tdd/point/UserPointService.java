@@ -42,4 +42,8 @@ public class UserPointService {
 
         return userPointTable.insertOrUpdate(id, balancePoint);
     }
+
+    public UserPoint rollback(long id, long originPoint) {
+        return userPointTable.insertOrUpdate(id, originPoint);
+    }
 }
