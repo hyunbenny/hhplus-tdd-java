@@ -29,7 +29,7 @@ public class UserPointFacade {
         }
     }
 
-    public UserPoint usePoint(long id, int usePoint) {
+    public UserPoint usePoint(long id, long usePoint) {
         UserPoint originUserPoint = userPointService.getPoint(id);
         try {
             UserPoint chargedUserPoint = userPointService.usePoint(id, usePoint);
