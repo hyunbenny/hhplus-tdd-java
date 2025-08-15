@@ -15,4 +15,9 @@ public class PointHistoryService {
     public List<PointHistory> getUserPointHistories(long userId) {
         return pointHistoryTable.selectAllByUserId(userId);
     }
+
+
+    public PointHistory savePointHistory(long userId, long chargePoint, TransactionType type) {
+        return null;
+    }
 }
