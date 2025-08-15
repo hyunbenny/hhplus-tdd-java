@@ -1,7 +1,8 @@
 package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.database.PointHistoryTable;
-import io.hhplus.tdd.exception.InvalidTransactionTypeException;
+import io.hhplus.tdd.exception.CustomException;
+import io.hhplus.tdd.exception.ErrorCodes;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -90,7 +91,9 @@ public class PointHistoryServiceTest {
         long userId = 1L;
         long chargePoint = 0L;
         TransactionType type = null;
-        assertThrows(InvalidTransactionTypeException.class, () -> sut.savePointHistory(userId, chargePoint, type));
+
+        CustomException exception = assertThrows(CustomException.class, () -> sut.savePointHistory(userId, chargePoint, type));
+        assertEquals(ErrorCodes.INVALID_TRANSACTION_TYPE.getCode(), exception.getErrorCode());
     }
 
     private PointHistory getPointHistoryFixture(TransactionType type) {
