@@ -2,6 +2,7 @@ package io.hhplus.tdd.point;
 
 
 import io.hhplus.tdd.database.UserPointTable;
+import io.hhplus.tdd.exception.PointAmountInvalidException;
 import io.hhplus.tdd.exception.PointBalanceInsufficientException;
 import io.hhplus.tdd.exception.UserNotExistException;
 import io.hhplus.tdd.point.UserPoint;
@@ -119,6 +120,15 @@ void givenUserIdAndPointAmount_whenBalanceInsufficient_thenThrowError() {
     when(userPointTable.selectById(id)).thenReturn(currentUserPoint);
 
     assertThrows(PointBalanceInsufficientException.class, () -> sut.usePoint(id, usePoint));
+}
+
+@DisplayName("포인트 사용 시, 사용하는 포인트가 0인 경우 예외를 반환한다.")
+@Test
+void givenIdAndUsePointAmount_whenUsePointAmountIsZero_thenThrowError() {
+    long id = 1L;
+    long usePoint = 0;
+
+    assertThrows(PointAmountInvalidException.class, () -> sut.usePoint(id, usePoint));
 }
 
 private UserPoint getUserPointFixture(long id, long point) {
