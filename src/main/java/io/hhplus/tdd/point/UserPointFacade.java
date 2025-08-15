@@ -1,5 +1,6 @@
 package io.hhplus.tdd.point;
 
+import io.hhplus.tdd.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -11,7 +12,15 @@ public class UserPointFacade {
     private final PointHistoryService pointHistoryService;
 
     public UserPoint chargePoint(long id, long chargePoint) {
-        return null;
+        UserPoint originUserPoint = userPointService.getPoint(id);
+        try {
+            UserPoint chargedUserPoint = userPointService.chargePoint(id, chargePoint);
+            pointHistoryService.savePointHistory(id, chargePoint, TransactionType.CHARGE);
+            return chargedUserPoint;
+        } catch (CustomException e) {
+            userPointService.rollback(id, originUserPoint.point());
+            throw e;
+        }
     }
 
 }
