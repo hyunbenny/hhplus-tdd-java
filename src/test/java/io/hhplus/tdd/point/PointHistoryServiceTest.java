@@ -1,6 +1,7 @@
 package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.database.PointHistoryTable;
+import io.hhplus.tdd.exception.InvalidTransactionTypeException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,9 +13,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,6 +54,47 @@ public class PointHistoryServiceTest {
         List<PointHistory> result = sut.getUserPointHistories(1L);
 
         assertTrue(result.isEmpty());
+    }
+
+    @DisplayName("포인트 사용 이력을 생성한다.")
+    @Test
+    void givenPointHistoryTransactionTypeUSE_whenCreateHistory_thenSaveAndReturnPointHistory() {
+        PointHistory pointHistory = getPointHistoryFixture(TransactionType.USE);
+        when(pointHistoryTable.insert(anyLong(), anyLong(), eq(TransactionType.USE), anyLong())).thenReturn(pointHistory);
+
+        long userId = 1L;
+        long chargePoint = 100L;
+        TransactionType type = TransactionType.USE;
+        PointHistory result = sut.savePointHistory(userId, chargePoint, type);
+
+        assertEquals(pointHistory, result);
+    }
+
+    @DisplayName("포인트 충전 이력을 생성한다.")
+    @Test
+    void givenPointHistoryTransactionTypeCHARGE_whenCreateHistory_thenSaveAndReturnPointHistory() {
+        PointHistory pointHistory = getPointHistoryFixture(TransactionType.CHARGE);
+        when(pointHistoryTable.insert(anyLong(), anyLong(), eq(TransactionType.CHARGE), anyLong())).thenReturn(pointHistory);
+
+        long userId = 1L;
+        long chargePoint = 100L;
+        TransactionType type = TransactionType.CHARGE;
+        PointHistory result = sut.savePointHistory(userId, chargePoint, type);
+
+        assertEquals(pointHistory, result);
+    }
+
+    @DisplayName("이력 생성 시, 거래 타입이 null인 경우 예외를 반환한다.")
+    @Test
+    void givenPointHistory_whenTransactionTypeIsNull_thenThrowError() {
+        long userId = 1L;
+        long chargePoint = 0L;
+        TransactionType type = null;
+        assertThrows(InvalidTransactionTypeException.class, () -> sut.savePointHistory(userId, chargePoint, type));
+    }
+
+    private PointHistory getPointHistoryFixture(TransactionType type) {
+        return new PointHistory(1L, 1L, 100L, type, System.currentTimeMillis());
     }
 
     private List<PointHistory> getPointHistoryFixtureList() {
