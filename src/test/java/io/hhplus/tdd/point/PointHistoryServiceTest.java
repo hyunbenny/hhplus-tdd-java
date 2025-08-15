@@ -4,6 +4,7 @@ import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.exception.CustomException;
 import io.hhplus.tdd.exception.ErrorCodes;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -28,72 +29,80 @@ public class PointHistoryServiceTest {
     @InjectMocks
     PointHistoryService sut;
 
-    @DisplayName("userId로 포인트 이력을 조회한다.")
-    @Test
-    void givenUserId_whenGetHistories_thenReturnPointHistoryList() {
-        long userId = 1L;
-        List<PointHistory> pointHistoryList = getPointHistoryFixtureList();
-        when(pointHistoryTable.selectAllByUserId(userId)).thenReturn(pointHistoryList);
+    @DisplayName("이력 조회")
+    @Nested
+    class getHistory {
+        @DisplayName("userId로 포인트 이력을 조회한다.")
+        @Test
+        void givenUserId_whenGetHistories_thenReturnPointHistoryList() {
+            long userId = 1L;
+            List<PointHistory> pointHistoryList = getPointHistoryFixtureList();
+            when(pointHistoryTable.selectAllByUserId(userId)).thenReturn(pointHistoryList);
 
-        List<PointHistory> result = sut.getUserPointHistories(1L);
+            List<PointHistory> result = sut.getUserPointHistories(1L);
 
-        assertEquals(pointHistoryList.size(), result.size());
-        assertEquals(pointHistoryList.get(0).userId(), result.get(0).userId());
-        assertEquals(pointHistoryList.get(0).amount(), result.get(0).amount());
-        assertEquals(pointHistoryList.get(0).type(), result.get(0).type());
-        assertEquals(pointHistoryList.get(pointHistoryList.size() - 1).userId(), result.get(result.size() - 1).userId());
-        assertEquals(pointHistoryList.get(pointHistoryList.size() - 1).type(), result.get(result.size() - 1).type());
-        assertEquals(pointHistoryList.get(pointHistoryList.size() - 1).amount(), result.get(result.size() - 1).amount());
+            assertEquals(pointHistoryList.size(), result.size());
+            assertEquals(pointHistoryList.get(0).userId(), result.get(0).userId());
+            assertEquals(pointHistoryList.get(0).amount(), result.get(0).amount());
+            assertEquals(pointHistoryList.get(0).type(), result.get(0).type());
+            assertEquals(pointHistoryList.get(pointHistoryList.size() - 1).userId(), result.get(result.size() - 1).userId());
+            assertEquals(pointHistoryList.get(pointHistoryList.size() - 1).type(), result.get(result.size() - 1).type());
+            assertEquals(pointHistoryList.get(pointHistoryList.size() - 1).amount(), result.get(result.size() - 1).amount());
+        }
+
+        @DisplayName("userId로 조회된 값이 없는 경우 빈 리스트를 반환한다.")
+        @Test
+        void givenUserId_whenNoHistory_thenReturnEmptyList() {
+            long userId = 1L;
+            when(pointHistoryTable.selectAllByUserId(userId)).thenReturn(Collections.emptyList());
+
+            List<PointHistory> result = sut.getUserPointHistories(1L);
+
+            assertTrue(result.isEmpty());
+        }
     }
 
-    @DisplayName("userId로 조회된 값이 없는 경우 빈 리스트를 반환한다.")
-    @Test
-    void givenUserId_whenNoHistory_thenReturnEmptyList() {
-        long userId = 1L;
-        when(pointHistoryTable.selectAllByUserId(userId)).thenReturn(Collections.emptyList());
+    @DisplayName("이력 생성")
+    @Nested
+    class createHistory {
+        @DisplayName("포인트 사용 이력을 생성한다.")
+        @Test
+        void givenPointHistoryTransactionTypeUSE_whenCreateHistory_thenSaveAndReturnPointHistory() {
+            PointHistory pointHistory = getPointHistoryFixture(TransactionType.USE);
+            when(pointHistoryTable.insert(anyLong(), anyLong(), eq(TransactionType.USE), anyLong())).thenReturn(pointHistory);
 
-        List<PointHistory> result = sut.getUserPointHistories(1L);
+            long userId = 1L;
+            long chargePoint = 100L;
+            TransactionType type = TransactionType.USE;
+            PointHistory result = sut.savePointHistory(userId, chargePoint, type);
 
-        assertTrue(result.isEmpty());
-    }
+            assertEquals(pointHistory, result);
+        }
 
-    @DisplayName("포인트 사용 이력을 생성한다.")
-    @Test
-    void givenPointHistoryTransactionTypeUSE_whenCreateHistory_thenSaveAndReturnPointHistory() {
-        PointHistory pointHistory = getPointHistoryFixture(TransactionType.USE);
-        when(pointHistoryTable.insert(anyLong(), anyLong(), eq(TransactionType.USE), anyLong())).thenReturn(pointHistory);
+        @DisplayName("포인트 충전 이력을 생성한다.")
+        @Test
+        void givenPointHistoryTransactionTypeCHARGE_whenCreateHistory_thenSaveAndReturnPointHistory() {
+            PointHistory pointHistory = getPointHistoryFixture(TransactionType.CHARGE);
+            when(pointHistoryTable.insert(anyLong(), anyLong(), eq(TransactionType.CHARGE), anyLong())).thenReturn(pointHistory);
 
-        long userId = 1L;
-        long chargePoint = 100L;
-        TransactionType type = TransactionType.USE;
-        PointHistory result = sut.savePointHistory(userId, chargePoint, type);
+            long userId = 1L;
+            long chargePoint = 100L;
+            TransactionType type = TransactionType.CHARGE;
+            PointHistory result = sut.savePointHistory(userId, chargePoint, type);
 
-        assertEquals(pointHistory, result);
-    }
+            assertEquals(pointHistory, result);
+        }
 
-    @DisplayName("포인트 충전 이력을 생성한다.")
-    @Test
-    void givenPointHistoryTransactionTypeCHARGE_whenCreateHistory_thenSaveAndReturnPointHistory() {
-        PointHistory pointHistory = getPointHistoryFixture(TransactionType.CHARGE);
-        when(pointHistoryTable.insert(anyLong(), anyLong(), eq(TransactionType.CHARGE), anyLong())).thenReturn(pointHistory);
+        @DisplayName("이력 생성 시, 거래 타입이 null인 경우 예외를 반환한다.")
+        @Test
+        void givenPointHistory_whenTransactionTypeIsNull_thenThrowError() {
+            long userId = 1L;
+            long chargePoint = 0L;
+            TransactionType type = null;
 
-        long userId = 1L;
-        long chargePoint = 100L;
-        TransactionType type = TransactionType.CHARGE;
-        PointHistory result = sut.savePointHistory(userId, chargePoint, type);
-
-        assertEquals(pointHistory, result);
-    }
-
-    @DisplayName("이력 생성 시, 거래 타입이 null인 경우 예외를 반환한다.")
-    @Test
-    void givenPointHistory_whenTransactionTypeIsNull_thenThrowError() {
-        long userId = 1L;
-        long chargePoint = 0L;
-        TransactionType type = null;
-
-        CustomException exception = assertThrows(CustomException.class, () -> sut.savePointHistory(userId, chargePoint, type));
-        assertEquals(ErrorCodes.INVALID_TRANSACTION_TYPE.getCode(), exception.getErrorCode());
+            CustomException exception = assertThrows(CustomException.class, () -> sut.savePointHistory(userId, chargePoint, type));
+            assertEquals(ErrorCodes.INVALID_TRANSACTION_TYPE.getCode(), exception.getErrorCode());
+        }
     }
 
     private PointHistory getPointHistoryFixture(TransactionType type) {

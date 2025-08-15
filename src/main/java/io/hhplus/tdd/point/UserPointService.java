@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class UserPointService {
+class UserPointService {
 
     private final UserPointTable userPointTable;
 
@@ -41,5 +41,9 @@ public class UserPointService {
         if(balancePoint < 0) throw new CustomException(ErrorCodes.POINT_BALANCE_INSUFFICIENT);
 
         return userPointTable.insertOrUpdate(id, balancePoint);
+    }
+
+    public UserPoint rollback(long id, long originPoint) {
+        return userPointTable.insertOrUpdate(id, originPoint);
     }
 }
