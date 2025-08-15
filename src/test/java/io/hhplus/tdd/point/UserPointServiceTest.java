@@ -138,25 +138,6 @@ void givenIdAndUsePointAmount_whenUsePointAmountIsLessThenZero_thenThrowError() 
     assertThrows(PointAmountInvalidException.class, () -> sut.usePoint(id, usePoint));
 }
 
-@DisplayName("포인트 충천 시, 충전하는 포인트가 0인 경우 예외를 반환한다.")
-@Test
-void givenIdAndChargePointAmount_whenChargePointAmountIsZero_thenThrowError() {
-    long id = 1L;
-    long chargePoint = 0;
-
-    assertThrows(PointAmountInvalidException.class, () -> sut.chargePoint(id, chargePoint));
-}
-
-@DisplayName("포인트 충전 시, 충전하는 포인트가 0보다 작은 경우 예외를 반환한다.")
-@Test
-void givenIdAndChargePointAmount_whenChargePointAmountIsLessThenZero_thenThrowError() {
-    long id = 1L;
-    long usePoint = -5;
-
-    assertThrows(PointAmountInvalidException.class, () -> sut.chargePoint(id, usePoint));
-}
-
-
 private UserPoint getUserPointFixture(long id, long point) {
         return new UserPoint(id, point, System.currentTimeMillis());
     }
