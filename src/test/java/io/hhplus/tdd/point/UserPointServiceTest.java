@@ -1,10 +1,10 @@
-package io.hhplus.tdd;
+package io.hhplus.tdd.point;
 
 
 import io.hhplus.tdd.database.UserPointTable;
+import io.hhplus.tdd.exception.PointAmountInvalidException;
+import io.hhplus.tdd.exception.PointBalanceInsufficientException;
 import io.hhplus.tdd.exception.UserNotExistException;
-import io.hhplus.tdd.point.UserPoint;
-import io.hhplus.tdd.point.UserPointService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -80,7 +80,65 @@ public class UserPointServiceTest {
         assertThrows(UserNotExistException.class, () -> sut.chargePoint(id, chargePointAmount));
     }
 
-    private UserPoint getUserPointFixture(long id, long point) {
+
+    @DisplayName("아이디와 사용한 포인트양을 전달받아 포인트를 차감한다.")
+    @Test
+    void givenIdAndPointAmount_whenUsePoint_thenDeductPointAmount() {
+        long id = 1L;
+        long currentPoint = 1000L;
+        long usedPoint = 500L;
+        UserPoint currentUserPoint = getUserPointFixture(id, currentPoint);
+        when(userPointTable.selectById(id)).thenReturn(currentUserPoint);
+
+        UserPoint updatedUserPoint = getUserPointFixture(id, currentPoint - usedPoint);
+        when(userPointTable.insertOrUpdate(id, currentPoint - usedPoint)).thenReturn(updatedUserPoint);
+
+        UserPoint result = sut.usePoint(id, usedPoint);
+
+        assertEquals(currentPoint - usedPoint, result.point());
+    }
+
+@DisplayName("아이디와 사용한 포인트양을 전달받아 포인트를 차감할 때, UserPoint 정보가 없는 경우 에러를 리턴한다.")
+@Test
+void givenIdAndPointAmount_whenUserPointNotExist_thenThrowError() {
+    long id = 1L;
+    long usePoint = 500L;
+    when(userPointTable.selectById(id)).thenReturn(null);
+
+    assertThrows(UserNotExistException.class, () -> sut.usePoint(id, usePoint));
+}
+
+@DisplayName("아이디와 사용한 포인트양을 전달받아 포인트를 차감할 때, 잔액이 부족하면 에러를 리턴한다.")
+@Test
+void givenUserIdAndPointAmount_whenBalanceInsufficient_thenThrowError() {
+    long id = 1L;
+    long currentPoint = 200L;
+    long usePoint = 500L;
+    UserPoint currentUserPoint = getUserPointFixture(id, currentPoint);
+    when(userPointTable.selectById(id)).thenReturn(currentUserPoint);
+
+    assertThrows(PointBalanceInsufficientException.class, () -> sut.usePoint(id, usePoint));
+}
+
+@DisplayName("포인트 사용 시, 사용하는 포인트가 0인 경우 예외를 반환한다.")
+@Test
+void givenIdAndUsePointAmount_whenUsePointAmountIsZero_thenThrowError() {
+    long id = 1L;
+    long usePoint = 0;
+
+    assertThrows(PointAmountInvalidException.class, () -> sut.usePoint(id, usePoint));
+}
+
+@DisplayName("포인트 사용 시, 사용하는 포인트가 0보다 작은 경우 예외를 반환한다.")
+@Test
+void givenIdAndUsePointAmount_whenUsePointAmountIsLessThenZero_thenThrowError() {
+    long id = 1L;
+    long usePoint = -5;
+
+    assertThrows(PointAmountInvalidException.class, () -> sut.usePoint(id, usePoint));
+}
+
+private UserPoint getUserPointFixture(long id, long point) {
         return new UserPoint(id, point, System.currentTimeMillis());
     }
 

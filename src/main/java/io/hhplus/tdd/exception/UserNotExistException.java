@@ -1,18 +1,17 @@
 package io.hhplus.tdd.exception;
 
-public class UserNotExistException extends RuntimeException{
-    private final String errorCode;
+import org.springframework.http.HttpStatus;
+
+public class UserNotExistException extends CustomException{
+
+    private static final String ERROR_CODE = "USER_POINT_NOT_EXIST";
+    private static final String DEFAULT_MESSAGE = "데이터가 존재하지 않습니다.";
 
     public UserNotExistException() {
-        this("USER_NOT_EXIST", "User does not exist.");
+        super(HttpStatus.NOT_FOUND, ERROR_CODE, DEFAULT_MESSAGE);
     }
 
-    public UserNotExistException(String errorCode, String message) {
-        super(message);
-        this.errorCode = errorCode;
-    }
-
-    public String getErrorCode() {
-        return errorCode;
+    public UserNotExistException(String customMessage) {
+        super(HttpStatus.NOT_FOUND, ERROR_CODE, customMessage);
     }
 }
