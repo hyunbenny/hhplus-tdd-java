@@ -23,4 +23,7 @@ public class UserPointFacade {
         }
     }
 
+    public UserPoint usePoint(long id, int usePoint) {
+        return null;
+    }
 }
