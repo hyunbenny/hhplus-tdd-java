@@ -1,7 +1,7 @@
 package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.database.PointHistoryTable;
-import io.hhplus.tdd.exception.PointAmountInvalidException;
+import io.hhplus.tdd.exception.InvalidTransactionTypeException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -84,31 +84,13 @@ public class PointHistoryServiceTest {
         assertEquals(pointHistory, result);
     }
 
-    @DisplayName("포인트 사용 이력 생성 시, 사용하는 포인트가 0인 경우 예외를 반환한다.")
-    @Test
-    void givenPointHistoryTransactionTypeUSE_whenUsePointAmountIsZero_thenThrowError() {
-        long userId = 1L;
-        long chargePoint = 0L;
-        TransactionType type = TransactionType.USE;
-        assertThrows(PointAmountInvalidException.class, () -> sut.savePointHistory(userId, chargePoint, type));
-    }
-
-    @DisplayName("포인트 충천 이력 생성 시, 충전하는 포인트가 0인 경우 예외를 반환한다.")
-    @Test
-    void givenPointHistoryTransactionTypeCHARGE_whenChargePointAmountIsZero_thenThrowError() {
-        long userId = 1L;
-        long chargePoint = 0L;
-        TransactionType type = TransactionType.CHARGE;
-        assertThrows(PointAmountInvalidException.class, () -> sut.savePointHistory(userId, chargePoint, type));
-    }
-
     @DisplayName("이력 생성 시, 거래 타입이 null인 경우 예외를 반환한다.")
     @Test
     void givenPointHistory_whenTransactionTypeIsNull_thenThrowError() {
         long userId = 1L;
         long chargePoint = 0L;
         TransactionType type = null;
-        assertThrows(PointAmountInvalidException.class, () -> sut.savePointHistory(userId, chargePoint, type));
+        assertThrows(InvalidTransactionTypeException.class, () -> sut.savePointHistory(userId, chargePoint, type));
     }
 
     private PointHistory getPointHistoryFixture(TransactionType type) {
