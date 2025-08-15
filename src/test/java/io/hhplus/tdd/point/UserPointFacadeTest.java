@@ -1,0 +1,70 @@
+package io.hhplus.tdd.point;
+
+import io.hhplus.tdd.database.UserPointTable;
+import io.hhplus.tdd.exception.CustomException;
+import io.hhplus.tdd.exception.ErrorCodes;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+
+class UserPointFacadeTest {
+
+    private UserPointTable userPointTable;
+
+    @BeforeEach
+    void setup() {
+        userPointTable = new UserPointTable();
+
+        userPointTable.insertOrUpdate(1L, 100);
+    }
+
+    @Test
+    @DisplayName("포인트 충전 > 정상 동작")
+    void givenUser_whenChargePoint_thenPointIncreased() {
+        UserPointService realUserPointService = new UserPointService(userPointTable);
+        PointHistoryService mockHistoryService = mock(PointHistoryService.class);
+
+        UserPointFacade sut = new UserPointFacade(realUserPointService, mockHistoryService);
+
+        UserPoint result = sut.chargePoint(1L, 500);
+        assertEquals(600, result.point());
+    }
+
+    @Test
+    @DisplayName("포인트 충전 > History 저장 중 예외 발생 시 롤백")
+    void givenUser_whenHistoryFails_thenPointRolledBack() {
+        UserPointService realUserPointService = new UserPointService(userPointTable);
+        PointHistoryService mockHistoryService = mock(PointHistoryService.class);
+
+        doThrow(new CustomException(ErrorCodes.INVALID_TRANSACTION_TYPE)).when(mockHistoryService).savePointHistory(eq(1L), anyLong(), any());
+
+        UserPointFacade sut = new UserPointFacade(realUserPointService, mockHistoryService);
+
+        CustomException ex = assertThrows(CustomException.class, () -> sut.chargePoint(1L, 500));
+        assertEquals(ErrorCodes.INVALID_TRANSACTION_TYPE.getCode(), ex.getErrorCode());
+
+        UserPoint userPoint = userPointTable.selectById(1L);
+        assertEquals(100, userPoint.point());
+    }
+
+    @Test
+    @DisplayName("포인트 충전 > 잘못된 금액 입력 시 예외 발생")
+    void givenInvalidAmount_whenCharge_thenThrowsException() {
+        UserPointService realUserPointService = new UserPointService(userPointTable);
+        PointHistoryService mockHistoryService = mock(PointHistoryService.class);
+
+        UserPointFacade sut = new UserPointFacade(realUserPointService, mockHistoryService);
+
+        CustomException ex = assertThrows(CustomException.class, () -> sut.chargePoint(1L, -50));
+
+        assertEquals(ErrorCodes.POINT_AMOUNT_INVALID.getCode(), ex.getErrorCode());
+        assertEquals(100, userPointTable.selectById(1L).point());
+    }
+
+}
