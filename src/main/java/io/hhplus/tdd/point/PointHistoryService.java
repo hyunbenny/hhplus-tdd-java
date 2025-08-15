@@ -13,6 +13,6 @@ public class PointHistoryService {
     private final PointHistoryTable pointHistoryTable;
 
     public List<PointHistory> getUserPointHistories(long userId) {
-        return null;
+        return pointHistoryTable.selectAllByUserId(userId);
     }
 }
