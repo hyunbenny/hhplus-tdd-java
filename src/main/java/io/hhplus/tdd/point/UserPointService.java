@@ -21,6 +21,8 @@ public class UserPointService {
     }
 
     public UserPoint chargePoint(long id, long chargePointAmount) {
+        if(chargePointAmount <= 0) throw new PointAmountInvalidException();
+
         UserPoint userPoint = userPointTable.selectById(id);
         if(userPoint == null) throw new UserNotExistException();
 

@@ -143,10 +143,7 @@ void givenIdAndUsePointAmount_whenUsePointAmountIsLessThenZero_thenThrowError() 
 @Test
 void givenIdAndChargePointAmount_whenChargePointAmountIsZero_thenThrowError() {
     long id = 1L;
-    long currentPoint = 200L;
     long chargePoint = 0L;
-    UserPoint currentUserPoint = getUserPointFixture(id, currentPoint);
-    when(userPointTable.selectById(anyLong())).thenReturn(currentUserPoint);
 
     assertThrows(PointAmountInvalidException.class, () -> sut.chargePoint(id, chargePoint));
 }
@@ -155,10 +152,7 @@ void givenIdAndChargePointAmount_whenChargePointAmountIsZero_thenThrowError() {
 @Test
 void givenIdAndChargePointAmount_whenChargePointAmountIsLessThenZero_thenThrowError() {
     long id = 1L;
-    long currentPoint = 200L;
     long chargePoint = -5L;
-    UserPoint currentUserPoint = getUserPointFixture(id, currentPoint);
-    when(userPointTable.selectById(anyLong())).thenReturn(currentUserPoint);
 
     assertThrows(PointAmountInvalidException.class, () -> sut.chargePoint(id, chargePoint));
 }
