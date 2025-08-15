@@ -14,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -136,6 +137,30 @@ void givenIdAndUsePointAmount_whenUsePointAmountIsLessThenZero_thenThrowError() 
     long usePoint = -5;
 
     assertThrows(PointAmountInvalidException.class, () -> sut.usePoint(id, usePoint));
+}
+
+@DisplayName("포인트 충전 시, 충전하는 포인트가 0인 경우 예외를 반환한다.")
+@Test
+void givenIdAndChargePointAmount_whenChargePointAmountIsZero_thenThrowError() {
+    long id = 1L;
+    long currentPoint = 200L;
+    long chargePoint = 0L;
+    UserPoint currentUserPoint = getUserPointFixture(id, currentPoint);
+    when(userPointTable.selectById(anyLong())).thenReturn(currentUserPoint);
+
+    assertThrows(PointAmountInvalidException.class, () -> sut.chargePoint(id, chargePoint));
+}
+
+@DisplayName("포인트 충전 시, 충전하는 포인트가 0보다 작은 경우 예외를 반환한다.")
+@Test
+void givenIdAndChargePointAmount_whenChargePointAmountIsLessThenZero_thenThrowError() {
+    long id = 1L;
+    long currentPoint = 200L;
+    long chargePoint = -5L;
+    UserPoint currentUserPoint = getUserPointFixture(id, currentPoint);
+    when(userPointTable.selectById(anyLong())).thenReturn(currentUserPoint);
+
+    assertThrows(PointAmountInvalidException.class, () -> sut.chargePoint(id, chargePoint));
 }
 
 private UserPoint getUserPointFixture(long id, long point) {
