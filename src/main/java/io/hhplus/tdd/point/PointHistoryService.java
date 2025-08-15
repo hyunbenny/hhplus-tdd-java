@@ -10,7 +10,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class PointHistoryService {
+class PointHistoryService {
 
     private final PointHistoryTable pointHistoryTable;
 
