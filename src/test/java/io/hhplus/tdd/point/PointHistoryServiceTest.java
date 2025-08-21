@@ -93,7 +93,7 @@ public class PointHistoryServiceTest {
             assertEquals(pointHistory, result);
         }
 
-        @DisplayName("이력 생성 시, 거래 타입이 null인 경우 예외를 반환한다.")
+        @DisplayName("거래 타입이 null인 경우 예외를 반환한다.")
         @Test
         void givenPointHistory_whenTransactionTypeIsNull_thenThrowError() {
             long userId = 1L;
