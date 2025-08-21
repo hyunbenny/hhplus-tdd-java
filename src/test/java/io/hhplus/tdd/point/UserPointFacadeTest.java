@@ -35,7 +35,7 @@ class UserPointFacadeTest {
         @Test
         @DisplayName("포인트 충전 > 정상 동작")
         void givenUser_whenChargePoint_thenPointIncreased() {
-            UserPointService realUserPointService = new UserPointService(userPointTable);
+            UserPointService realUserPointService = new UserPointService(userPointTable, pointHistoryTable);
             PointHistoryService realPointHistoryService = new PointHistoryService(pointHistoryTable);
 
             UserPointFacade sut = new UserPointFacade(realUserPointService, realPointHistoryService);
@@ -50,26 +50,9 @@ class UserPointFacadeTest {
         }
 
         @Test
-        @DisplayName("포인트 충전 > History 저장 중 예외 발생 시 롤백")
-        void givenUser_whenHistoryFails_thenPointRolledBack() {
-            UserPointService realUserPointService = new UserPointService(userPointTable);
-            PointHistoryService mockHistoryService = mock(PointHistoryService.class);
-
-            doThrow(new CustomException(ErrorCodes.INVALID_TRANSACTION_TYPE)).when(mockHistoryService).savePointHistory(eq(1L), anyLong(), any());
-
-            UserPointFacade sut = new UserPointFacade(realUserPointService, mockHistoryService);
-
-            CustomException ex = assertThrows(CustomException.class, () -> sut.chargePoint(1L, 500));
-            assertEquals(ErrorCodes.INVALID_TRANSACTION_TYPE.getCode(), ex.getErrorCode());
-
-            UserPoint userPoint = userPointTable.selectById(1L);
-            assertEquals(100, userPoint.point());
-        }
-
-        @Test
         @DisplayName("포인트 충전 > 잘못된 금액 입력 시 예외 발생")
         void givenInvalidAmount_whenCharge_thenThrowsException() {
-            UserPointService realUserPointService = new UserPointService(userPointTable);
+            UserPointService realUserPointService = new UserPointService(userPointTable, pointHistoryTable);
             PointHistoryService mockHistoryService = mock(PointHistoryService.class);
 
             UserPointFacade sut = new UserPointFacade(realUserPointService, mockHistoryService);
@@ -87,7 +70,7 @@ class UserPointFacadeTest {
         @Test
         @DisplayName("포인트 사용 > 정상 동작")
         void givenUser_whenUsePoint_thenPointDecreased() {
-            UserPointService realUserPointService = new UserPointService(userPointTable);
+            UserPointService realUserPointService = new UserPointService(userPointTable, pointHistoryTable);
             PointHistoryService realPointHistoryService = new PointHistoryService(pointHistoryTable);
 
             UserPointFacade sut = new UserPointFacade(realUserPointService, realPointHistoryService);
@@ -102,26 +85,9 @@ class UserPointFacadeTest {
         }
 
         @Test
-        @DisplayName("포인트 사용 > History 저장 중 예외 발생 시 롤백")
-        void givenUser_whenUsePointHistoryFails_thenPointRolledBack() {
-            UserPointService realUserPointService = new UserPointService(userPointTable);
-            PointHistoryService mockHistoryService = mock(PointHistoryService.class);
-
-            doThrow(new CustomException(ErrorCodes.INVALID_TRANSACTION_TYPE)).when(mockHistoryService).savePointHistory(eq(1L), anyLong(), any());
-
-            UserPointFacade sut = new UserPointFacade(realUserPointService, mockHistoryService);
-
-            CustomException ex = assertThrows(CustomException.class, () -> sut.usePoint(1L, 50));
-            assertEquals(ErrorCodes.INVALID_TRANSACTION_TYPE.getCode(), ex.getErrorCode());
-
-            UserPoint userPoint = userPointTable.selectById(1L);
-            assertEquals(100, userPoint.point());
-        }
-
-        @Test
         @DisplayName("포인트 사용 > 잘못된 금액 입력 시 예외 발생")
         void givenInvalidAmount_whenUsePoint_thenThrowsException() {
-            UserPointService realUserPointService = new UserPointService(userPointTable);
+            UserPointService realUserPointService = new UserPointService(userPointTable, pointHistoryTable);
             PointHistoryService mockHistoryService = mock(PointHistoryService.class);
 
             UserPointFacade sut = new UserPointFacade(realUserPointService, mockHistoryService);

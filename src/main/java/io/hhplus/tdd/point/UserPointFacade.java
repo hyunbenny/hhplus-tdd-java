@@ -1,12 +1,12 @@
 package io.hhplus.tdd.point;
 
-import io.hhplus.tdd.exception.CustomException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-@Service
+// TODO: UserPoint / PointHistory를 바로 반환하지 않고 dto를 변환하여 반환
+@Component
 @RequiredArgsConstructor
 public class UserPointFacade {
 
@@ -18,27 +18,11 @@ public class UserPointFacade {
     }
 
     public UserPoint chargePoint(long id, long chargePoint) {
-        UserPoint originUserPoint = userPointService.getPoint(id);
-        try {
-            UserPoint chargedUserPoint = userPointService.chargePoint(id, chargePoint);
-            pointHistoryService.savePointHistory(id, chargePoint, TransactionType.CHARGE);
-            return chargedUserPoint;
-        } catch (CustomException e) {
-            userPointService.rollback(id, originUserPoint.point());
-            throw e;
-        }
+        return userPointService.chargePoint(id, chargePoint);
     }
 
     public UserPoint usePoint(long id, long usePoint) {
-        UserPoint originUserPoint = userPointService.getPoint(id);
-        try {
-            UserPoint chargedUserPoint = userPointService.usePoint(id, usePoint);
-            pointHistoryService.savePointHistory(id, usePoint, TransactionType.USE);
-            return chargedUserPoint;
-        } catch (CustomException e) {
-            userPointService.rollback(id, originUserPoint.point());
-            throw e;
-        }
+        return userPointService.usePoint(id, usePoint);
     }
 
     public List<PointHistory> getUserPointHistories(long userId) {
