@@ -1,5 +1,6 @@
 package io.hhplus.tdd.point;
 
+import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
 import io.hhplus.tdd.exception.CustomException;
 import io.hhplus.tdd.exception.ErrorCodes;
@@ -7,11 +8,17 @@ import io.hhplus.tdd.exception.ErrorCodes;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
+
 @Service
 @RequiredArgsConstructor
 class UserPointService {
 
     private final UserPointTable userPointTable;
+    private final PointHistoryTable pointHistoryTable;
+    private final ConcurrentHashMap<Long, ReentrantLock> userLocks = new ConcurrentHashMap<>();
+    private final boolean fair = true;
 
     public UserPoint getPoint(long id) {
         UserPoint userPoint = userPointTable.selectById(id);
@@ -20,27 +27,61 @@ class UserPointService {
         return userPoint;
     }
 
+    // TODO: 실제 DB를 붙이는 경우 try-catch에서 트랜잭션 처리하는 걸 @Transactional 을 통해 처리하도록 수정 필요
     public UserPoint chargePoint(long id, long chargePointAmount) {
         if(chargePointAmount <= 0) throw new CustomException(ErrorCodes.POINT_AMOUNT_INVALID);
 
-        UserPoint userPoint = userPointTable.selectById(id);
-        if(userPoint == null) throw new CustomException(ErrorCodes.USER_NOT_EXIST);
+        ReentrantLock lock = userLocks.computeIfAbsent(id, k -> new ReentrantLock(fair));
+        lock.lock();
 
-        long chargedPoint = userPoint.point() + chargePointAmount;
+        UserPoint updatedUserPoint = null;
+        long originPointAmount = 0;
+        try {
+            UserPoint userPoint = userPointTable.selectById(id);
+            if (userPoint == null) throw new CustomException(ErrorCodes.USER_NOT_EXIST);
 
-        return userPointTable.insertOrUpdate(id, chargedPoint);
+            originPointAmount = userPoint.point();
+            long chargedPoint = userPoint.point() + chargePointAmount;
+
+            updatedUserPoint = userPointTable.insertOrUpdate(id, chargedPoint);
+            pointHistoryTable.insert(id, chargePointAmount, TransactionType.CHARGE, System.currentTimeMillis());
+
+        } catch (Exception e) {
+            rollback(id, originPointAmount);
+        } finally {
+            lock.unlock();
+        }
+
+        return updatedUserPoint;
     }
 
+    // TODO: 실제 DB를 붙이는 경우 try-catch에서 트랜잭션 처리하는 걸 @Transactional 을 통해 처리하도록 수정 필요
     public UserPoint usePoint(long id, long usePointAmount) {
         if(usePointAmount <= 0) throw new CustomException(ErrorCodes.POINT_AMOUNT_INVALID);
 
-        UserPoint userPoint = userPointTable.selectById(id);
-        if(userPoint == null) throw new CustomException(ErrorCodes.USER_NOT_EXIST);
+        ReentrantLock lock = userLocks.computeIfAbsent(id, k -> new ReentrantLock(fair));
+        lock.lock();
 
-        long balancePoint = userPoint.point() - usePointAmount;
-        if(balancePoint < 0) throw new CustomException(ErrorCodes.POINT_BALANCE_INSUFFICIENT);
+        UserPoint updatedUserPoint = null;
+        long originPointAmount = 0;
+        try {
+            UserPoint userPoint = userPointTable.selectById(id);
+            if (userPoint == null) throw new CustomException(ErrorCodes.USER_NOT_EXIST);
 
-        return userPointTable.insertOrUpdate(id, balancePoint);
+            originPointAmount = userPoint.point();
+            long balancePoint = userPoint.point() - usePointAmount;
+            if (balancePoint < 0) throw new CustomException(ErrorCodes.POINT_BALANCE_INSUFFICIENT);
+
+            updatedUserPoint = userPointTable.insertOrUpdate(id, balancePoint);
+            pointHistoryTable.insert(id, balancePoint, TransactionType.USE, System.currentTimeMillis());
+
+        } catch (Exception e) {
+            rollback(id, originPointAmount);
+        } finally{
+            lock.unlock();
+        }
+
+        return updatedUserPoint;
     }
 
     public UserPoint rollback(long id, long originPoint) {

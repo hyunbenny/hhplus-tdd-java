@@ -1,6 +1,7 @@
 package io.hhplus.tdd.point;
 
 
+import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
 import io.hhplus.tdd.exception.CustomException;
 import io.hhplus.tdd.exception.ErrorCodes;
@@ -14,13 +15,18 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class UserPointServiceTest {
 
     @Mock
     UserPointTable userPointTable;
+
+    @Mock
+    PointHistoryTable pointHistoryTable;
 
     @InjectMocks
     UserPointService sut;
@@ -76,6 +82,26 @@ public class UserPointServiceTest {
             assertEquals(sum, result.point());
         }
 
+        @DisplayName("아이디와 충천할 포인트양을 전달받아 포인트를 충전하고 이력을 저장한다.")
+        @Test
+        void givenIdAndPointAmount_whenChargePoint_thenAddPointAmountAndSaveHistory() {
+            long id = 1L;
+            long currentPoint = 500L;
+            long chargePointAmount = 1000L;
+            long sum = currentPoint + chargePointAmount;
+
+            UserPoint currentUserPoint = getUserPointFixture(id, currentPoint);
+            when(userPointTable.selectById(id)).thenReturn(currentUserPoint);
+
+            UserPoint updatedUserPoint = getUserPointFixture(id, sum);
+            when(userPointTable.insertOrUpdate(id, sum)).thenReturn(updatedUserPoint);
+
+            UserPoint result = sut.chargePoint(id, chargePointAmount);
+
+            assertEquals(sum, result.point());
+            verify(pointHistoryTable, times(1)).insert(eq(id), eq(chargePointAmount), eq(TransactionType.CHARGE), anyLong());
+        }
+
         @DisplayName("아이디와 충천할 포인트양을 전달받아 포인트를 충전할 때, UserPoint 정보가 없는 경우 에러를 리턴한다.")
         @Test
         void givenIdAndPointAmount_whenUserNotExist_thenReturnError() {
@@ -88,7 +114,7 @@ public class UserPointServiceTest {
             assertEquals(ErrorCodes.USER_NOT_EXIST.getCode(), exception.getErrorCode());
         }
 
-        @DisplayName("포인트 충전 시, 충전하는 포인트가 0인 경우 예외를 반환한다.")
+        @DisplayName("충전하는 포인트가 0인 경우 예외를 반환한다.")
         @Test
         void givenIdAndChargePointAmount_whenChargePointAmountIsZero_thenThrowError() {
             long id = 1L;
@@ -98,7 +124,7 @@ public class UserPointServiceTest {
             assertEquals(ErrorCodes.POINT_AMOUNT_INVALID.getCode(), exception.getErrorCode());
         }
 
-        @DisplayName("포인트 충전 시, 충전하는 포인트가 0보다 작은 경우 예외를 반환한다.")
+        @DisplayName("충전하는 포인트가 0보다 작은 경우 예외를 반환한다.")
         @Test
         void givenIdAndChargePointAmount_whenChargePointAmountIsLessThenZero_thenThrowError() {
             long id = 1L;
@@ -118,16 +144,37 @@ public class UserPointServiceTest {
         void givenIdAndPointAmount_whenUsePoint_thenDeductPointAmount() {
             long id = 1L;
             long currentPoint = 1000L;
-            long usedPoint = 500L;
+            long usePoint = 500L;
             UserPoint currentUserPoint = getUserPointFixture(id, currentPoint);
             when(userPointTable.selectById(id)).thenReturn(currentUserPoint);
 
-            UserPoint updatedUserPoint = getUserPointFixture(id, currentPoint - usedPoint);
-            when(userPointTable.insertOrUpdate(id, currentPoint - usedPoint)).thenReturn(updatedUserPoint);
+            UserPoint updatedUserPoint = getUserPointFixture(id, currentPoint - usePoint);
+            when(userPointTable.insertOrUpdate(id, currentPoint - usePoint)).thenReturn(updatedUserPoint);
 
-            UserPoint result = sut.usePoint(id, usedPoint);
+            UserPoint result = sut.usePoint(id, usePoint);
 
-            assertEquals(currentPoint - usedPoint, result.point());
+            assertEquals(currentPoint - usePoint, result.point());
+        }
+
+        @DisplayName("아이디와 사용할 포인트양을 전달받아 포인트를 사용하고 이력을 저장한다.")
+        @Test
+        void givenIdAndPointAmount_whenUsePoint_thenDeductPointAmountAndSaveHistory() {
+            long id = 1L;
+            long currentPoint = 1000L;
+            long usePoint = 500L;
+            long balance = currentPoint - usePoint;
+
+
+            UserPoint currentUserPoint = getUserPointFixture(id, currentPoint);
+            when(userPointTable.selectById(id)).thenReturn(currentUserPoint);
+
+            UserPoint updatedUserPoint = getUserPointFixture(id, balance);
+            when(userPointTable.insertOrUpdate(id, balance)).thenReturn(updatedUserPoint);
+
+            UserPoint result = sut.usePoint(id, usePoint);
+            verify(pointHistoryTable, times(1)).insert(eq(id), eq(usePoint), eq(TransactionType.USE), anyLong());
+
+            assertEquals(balance, result.point());
         }
 
         @DisplayName("아이디와 사용한 포인트양을 전달받아 포인트를 차감할 때, UserPoint 정보가 없는 경우 에러를 리턴한다.")
@@ -155,7 +202,7 @@ public class UserPointServiceTest {
             assertEquals(ErrorCodes.POINT_BALANCE_INSUFFICIENT.getCode(), exception.getErrorCode());
         }
 
-        @DisplayName("포인트 사용 시, 사용하는 포인트가 0인 경우 예외를 반환한다.")
+        @DisplayName("사용하는 포인트가 0인 경우 예외를 반환한다.")
         @Test
         void givenIdAndUsePointAmount_whenUsePointAmountIsZero_thenThrowError() {
             long id = 1L;
@@ -165,7 +212,7 @@ public class UserPointServiceTest {
             assertEquals(ErrorCodes.POINT_AMOUNT_INVALID.getCode(), exception.getErrorCode());
         }
 
-        @DisplayName("포인트 사용 시, 사용하는 포인트가 0보다 작은 경우 예외를 반환한다.")
+        @DisplayName("사용하는 포인트가 0보다 작은 경우 예외를 반환한다.")
         @Test
         void givenIdAndUsePointAmount_whenUsePointAmountIsLessThenZero_thenThrowError() {
             long id = 1L;
@@ -193,6 +240,10 @@ public class UserPointServiceTest {
 
     private UserPoint getUserPointFixture(long id, long point) {
         return new UserPoint(id, point, System.currentTimeMillis());
+    }
+
+    private PointHistory getPointHistoryFixture(TransactionType type) {
+        return new PointHistory(1L, 1L, 100L, type, System.currentTimeMillis());
     }
 
 }

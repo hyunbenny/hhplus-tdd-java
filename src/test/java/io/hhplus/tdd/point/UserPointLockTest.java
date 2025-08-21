@@ -20,7 +20,7 @@ public class UserPointLockTest {
 
     @BeforeEach
     void setUp() {
-        UserPointService userPointService = new UserPointService(userPointTable);
+        UserPointService userPointService = new UserPointService(userPointTable, pointHistoryTable);
         PointHistoryService pointHistoryService = new PointHistoryService(pointHistoryTable);
         userPointFacade = new UserPointFacade(userPointService, pointHistoryService);
     }
