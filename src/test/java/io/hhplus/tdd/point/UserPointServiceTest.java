@@ -102,6 +102,30 @@ public class UserPointServiceTest {
             verify(pointHistoryTable, times(1)).insert(eq(id), eq(chargePointAmount), eq(TransactionType.CHARGE), anyLong());
         }
 
+        @Test
+        @DisplayName("아이디와 충천할 포인트양을 전달받아 포인트를 충전하고 이력 저장 중 싪패하면 롤백이 되어야 한다.")
+        void givenIdAndPointAmount_whenAfterChargePoint_PointHistoryTableOccurDBException_thenRollbackUserPoint() {
+            long id = 1L;
+            long currentPointAmount = 500L;
+            long chargePointAmount = 1000L;
+            long sum = currentPointAmount + chargePointAmount;
+
+            UserPoint userPoint = getUserPointFixture(id, currentPointAmount);
+            UserPoint updatedUserPoint = getUserPointFixture(id, sum);
+
+            when(userPointTable.selectById(id)).thenReturn(userPoint);
+            when(userPointTable.insertOrUpdate(id, sum)).thenReturn(updatedUserPoint);
+
+            doThrow(new RuntimeException("DB error"))
+                    .when(pointHistoryTable)
+                    .insert(eq(id), eq(sum), eq(TransactionType.CHARGE), anyLong());
+
+            UserPointService spyService = spy(sut);
+            spyService.chargePoint(id, chargePointAmount);
+
+            verify(spyService, times(1)).rollback(id, currentPointAmount);
+        }
+
         @DisplayName("아이디와 충천할 포인트양을 전달받아 포인트를 충전할 때, UserPoint 정보가 없는 경우 에러를 리턴한다.")
         @Test
         void givenIdAndPointAmount_whenUserNotExist_thenReturnError() {
@@ -175,6 +199,30 @@ public class UserPointServiceTest {
             verify(pointHistoryTable, times(1)).insert(eq(id), eq(usePoint), eq(TransactionType.USE), anyLong());
 
             assertEquals(balance, result.point());
+        }
+
+        @Test
+        @DisplayName("아이디와 사용할 포인트양을 전달받아 포인트를 사용하고 이력 저장 중 싪패하면 롤백이 되어야 한다.")
+        void givenIdAndPointAmount_whenAfterUsePoint_PointHistoryTableOccurDBException_thenRollbackUserPoint() {
+            long id = 1L;
+            long currentPointAmount = 1000L;
+            long usePointAmount = 500L;
+            long deduct = currentPointAmount - usePointAmount;
+
+            UserPoint userPoint = getUserPointFixture(id, currentPointAmount);
+            UserPoint updatedUserPoint = getUserPointFixture(id, deduct);
+
+            when(userPointTable.selectById(id)).thenReturn(userPoint);
+            when(userPointTable.insertOrUpdate(id, deduct)).thenReturn(updatedUserPoint);
+
+            doThrow(new RuntimeException("DB error"))
+                    .when(pointHistoryTable)
+                    .insert(eq(id), eq(deduct), eq(TransactionType.USE), anyLong());
+
+            UserPointService spyService = spy(sut);
+            spyService.usePoint(id, usePointAmount);
+
+            verify(spyService, times(1)).rollback(id, currentPointAmount);
         }
 
         @DisplayName("아이디와 사용한 포인트양을 전달받아 포인트를 차감할 때, UserPoint 정보가 없는 경우 에러를 리턴한다.")
