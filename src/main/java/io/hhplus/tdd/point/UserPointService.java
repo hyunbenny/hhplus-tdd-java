@@ -8,12 +8,17 @@ import io.hhplus.tdd.exception.ErrorCodes;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
+
 @Service
 @RequiredArgsConstructor
 class UserPointService {
 
     private final UserPointTable userPointTable;
     private final PointHistoryTable pointHistoryTable;
+    private final ConcurrentHashMap<Long, ReentrantLock> userLocks = new ConcurrentHashMap<>();
+    private final boolean fair = true;
 
     public UserPoint getPoint(long id) {
         UserPoint userPoint = userPointTable.selectById(id);
@@ -26,18 +31,25 @@ class UserPointService {
     public UserPoint chargePoint(long id, long chargePointAmount) {
         if(chargePointAmount <= 0) throw new CustomException(ErrorCodes.POINT_AMOUNT_INVALID);
 
-        UserPoint userPoint = userPointTable.selectById(id);
-        if(userPoint == null) throw new CustomException(ErrorCodes.USER_NOT_EXIST);
-
-        long originPointAmount = userPoint.point();
-        long chargedPoint = userPoint.point() + chargePointAmount;
+        ReentrantLock lock = userLocks.computeIfAbsent(id, k -> new ReentrantLock(fair));
+        lock.lock();
 
         UserPoint updatedUserPoint = null;
+        long originPointAmount = 0;
         try {
+            UserPoint userPoint = userPointTable.selectById(id);
+            if (userPoint == null) throw new CustomException(ErrorCodes.USER_NOT_EXIST);
+
+            originPointAmount = userPoint.point();
+            long chargedPoint = userPoint.point() + chargePointAmount;
+
             updatedUserPoint = userPointTable.insertOrUpdate(id, chargedPoint);
             pointHistoryTable.insert(id, chargePointAmount, TransactionType.CHARGE, System.currentTimeMillis());
+
         } catch (Exception e) {
             rollback(id, originPointAmount);
+        } finally {
+            lock.unlock();
         }
 
         return updatedUserPoint;
@@ -47,19 +59,26 @@ class UserPointService {
     public UserPoint usePoint(long id, long usePointAmount) {
         if(usePointAmount <= 0) throw new CustomException(ErrorCodes.POINT_AMOUNT_INVALID);
 
-        UserPoint userPoint = userPointTable.selectById(id);
-        if(userPoint == null) throw new CustomException(ErrorCodes.USER_NOT_EXIST);
-
-        long originPointAmount = userPoint.point();
-        long balancePoint = userPoint.point() - usePointAmount;
-        if(balancePoint < 0) throw new CustomException(ErrorCodes.POINT_BALANCE_INSUFFICIENT);
+        ReentrantLock lock = userLocks.computeIfAbsent(id, k -> new ReentrantLock(fair));
+        lock.lock();
 
         UserPoint updatedUserPoint = null;
+        long originPointAmount = 0;
         try {
+            UserPoint userPoint = userPointTable.selectById(id);
+            if (userPoint == null) throw new CustomException(ErrorCodes.USER_NOT_EXIST);
+
+            originPointAmount = userPoint.point();
+            long balancePoint = userPoint.point() - usePointAmount;
+            if (balancePoint < 0) throw new CustomException(ErrorCodes.POINT_BALANCE_INSUFFICIENT);
+
             updatedUserPoint = userPointTable.insertOrUpdate(id, balancePoint);
             pointHistoryTable.insert(id, balancePoint, TransactionType.USE, System.currentTimeMillis());
+
         } catch (Exception e) {
             rollback(id, originPointAmount);
+        } finally{
+            lock.unlock();
         }
 
         return updatedUserPoint;
